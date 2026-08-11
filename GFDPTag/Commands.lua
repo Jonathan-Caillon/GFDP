@@ -17,7 +17,7 @@ local function ShowHelp()
         { "/gfdp friends [confirm]",  "ecrit le tag dans les notes de la liste d'amis" },
         { "/gfdp tooltip on|off",     "tag dans les infobulles" },
         { "/gfdp chat on|off",        "tag dans le chat" },
-        { "/gfdp group on|off",       "tag sur les cadres de groupe et de raid" },
+        { "/gfdp group on|off",       "tag sur les cadres de groupe" },
         { "/gfdp tag <texte>",        "change le texte du tag (defaut : GFDP)" },
     }
     for _, line in ipairs(lines) do
@@ -116,11 +116,11 @@ SlashCmdList["GFDPTAG"] = function(input)
     elseif cmd == "group" or cmd == "groupe" then
         local value = ParseToggle(rest)
         if value == nil then
-            ns.Print("Groupe/raid : %s. Usage : /gfdp group on|off", ns.db.group and "active" or "desactive")
+            ns.Print("Cadres de groupe : %s. Usage : /gfdp group on|off", ns.db.group and "active" or "desactive")
         else
             ns.db.group = value
             ns.Group:Refresh()
-            ns.Print("Tag sur les cadres de groupe et de raid %s.", value and "active" or "desactive")
+            ns.Print("Tag sur les cadres de groupe %s.", value and "active" or "desactive")
         end
 
     elseif cmd == "tag" then

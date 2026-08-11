@@ -1,12 +1,8 @@
--- GFDP Tag : affichage du tag sur les cadres de groupe et de raid
+-- GFDP Tag : affichage du tag sur les cadres de groupe
 local ADDON_NAME, ns = ...
 
 local Group = {}
 ns.Group = Group
-
--- Garde-fou : SetText ne redeclenche pas UpdateName, mais si un autre addon
--- s'intercale dans la chaine, ce drapeau empeche toute reentrance.
-local busy = false
 
 -- Retire un prefixe deja pose, quels que soient la couleur et le texte du tag.
 local function Strip(text)
@@ -15,37 +11,31 @@ local function Strip(text)
 end
 
 --- Pose ou retire le tag selon que l'unite est dans la liste.
--- Le retrait est fait ici aussi : c'est ce qui permet a un /gfdp del de
--- s'appliquer aux cadres de raid sans avoir a forcer un rafraichissement.
 local function Apply(fontString, unit)
-    if busy then return end
     if not ns.db then return end
     if not fontString or not unit then return end
 
     local current = fontString:GetText()
     if not current or current == "" then return end
 
-    local wanted = current
+    local wanted = Strip(current)
     if ns.db.group and UnitExists(unit) and UnitIsPlayer(unit) then
         local name, realm = UnitName(unit)
         if name and ns.Roster:IsTagged(name, realm) then
-            wanted = ns.ColoredTag() .. " " .. Strip(current)
-        else
-            wanted = Strip(current)
+            wanted = ns.ColoredTag() .. " " .. wanted
         end
-    else
-        wanted = Strip(current)
     end
 
     if wanted ~= current then
-        busy = true
         fontString:SetText(wanted)
-        busy = false
     end
 end
 
--- Parcourt les cadres de groupe, quelle que soit la version du client.
+-- Parcourt les cadres de groupe standard.
 -- Retail expose PartyFrame.MemberFrame1..4, Classic PartyMemberFrame1..4.
+--
+-- Les cadres de raid et les cadres de groupe "style raid" sont volontairement
+-- exclus : voir le commentaire de Init().
 local function ForEachPartyFrame(callback)
     if PartyFrame then
         for i = 1, 4 do
@@ -69,10 +59,6 @@ function Group:UpdatePartyFrames()
 end
 
 --- Reapplique le tag apres un import ou un changement de reglage.
--- Ne touche volontairement pas aux cadres de raid : CompactRaidFrameContainer
--- est pilote par du code securise, l'appeler depuis un addon le contaminerait
--- et provoquerait des "action bloquee" a repetition. Les cadres de raid se
--- remettent a jour seuls au prochain passage de Blizzard sur UpdateName.
 function Group:Refresh()
     self:UpdatePartyFrames()
 end
@@ -81,23 +67,22 @@ function Group:Init()
     if self.initialized then return end
     self.initialized = true
 
-    -- Cadres de raid, et cadres de groupe en mode "raid" : un seul point d'entree.
-    -- Blizzard reconstruit le nom a chaque appel, le hook repasse donc apres lui.
-    if CompactUnitFrame_UpdateName then
-        hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
-            if frame and frame.unit and frame.name then
-                Apply(frame.name, frame.unit)
-            end
-        end)
-    end
-
-    -- Cadres de groupe classiques : aucune fonction globale hookable sur toutes
-    -- les versions, on repasse donc sur evenement.
+    -- Pas de hook sur CompactUnitFrame_UpdateName, donc pas de tag sur les
+    -- cadres de raid ni sur les cadres de groupe "style raid".
     --
-    -- UNIT_NAME_UPDATE n'est volontairement PAS ecoute : sans filtre il se
-    -- declenche pour toutes les unites du monde, des dizaines de fois par
-    -- seconde, et empilait autant de timers. Le nom des membres est de toute
-    -- facon ecrit lors des changements de roster.
+    -- hooksecurefunc fait tourner le code de l'addon a l'interieur de la chaine
+    -- d'appel de Blizzard. Depuis Midnight, l'execution est alors marquee comme
+    -- contaminee, et la suite de la chaine (UpdateAll -> UpdateHealth ->
+    -- UpdateHealthColor) compare des valeurs "secretes", ce que le client
+    -- refuse en execution contaminee :
+    --
+    --   CompactUnitFrame.lua:692: attempt to compare local 'oldR'
+    --   (a secret number value, while execution tainted by 'GFDPTag')
+    --
+    -- L'erreur se repetait a chaque reconstruction des cadres. Aucun reglage du
+    -- hook n'evite cela : c'est le fait meme d'executer du code d'addon dans
+    -- cette chaine qui contamine. Les cadres ci-dessous sont mis a jour depuis
+    -- notre propre contexte (evenement + timer), jamais depuis celui de Blizzard.
     local pending = false
     local watcher = CreateFrame("Frame")
     watcher:RegisterEvent("GROUP_ROSTER_UPDATE")

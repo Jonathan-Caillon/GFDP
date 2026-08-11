@@ -10,7 +10,7 @@ local DEFAULTS = {
     color      = "33ff99",   -- couleur RRGGBB du tag
     tooltip    = true,       -- afficher le tag dans l'infobulle des joueurs
     chat       = true,       -- prefixer les messages de chat des joueurs tagges
-    group      = true,       -- afficher le tag sur les cadres de groupe et de raid
+    group      = true,       -- afficher le tag sur les cadres de groupe
     entriesByFull = {},      -- ["nom-royaume"] = { name = "Nom", realm = "Royaume" }
     entriesByName = {},      -- ["nom"]         = { name = "Nom" }  (tous royaumes)
 }

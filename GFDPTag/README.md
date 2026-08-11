@@ -53,7 +53,7 @@ En-têtes reconnus : `nom`, `name`, `joueur`, `player`, `personnage`, `character
 |---|---|
 | Infobulle des joueurs | automatique, ligne `GFDP` sous le nom |
 | Chat | le message est préfixé de `[GFDP]` |
-| Cadres de groupe et de raid | le nom affiché est préfixé de `[GFDP]` |
+| Cadres de groupe | le nom affiché est préfixé de `[GFDP]` |
 | Notes d'amis | `/gfdp friends confirm` |
 
 La dernière écrit réellement des données côté serveur. **Sans le mot `confirm`, la commande fait une simulation** et se contente d'afficher ce qui serait modifié. Les écritures sont espacées de 0,25 s pour éviter la limitation serveur, et une note déjà taguée n'est jamais modifiée deux fois.
@@ -72,7 +72,7 @@ La dernière écrit réellement des données côté serveur. **Sans le mot `conf
 | `/gfdp friends [confirm]` | tag dans les notes d'amis |
 | `/gfdp tooltip on\|off` | tag dans les infobulles |
 | `/gfdp chat on\|off` | tag dans le chat |
-| `/gfdp group on\|off` | tag sur les cadres de groupe et de raid |
+| `/gfdp group on\|off` | tag sur les cadres de groupe |
 | `/gfdp tag <texte>` | change le texte du tag (défaut : `GFDP`) |
 
 ## Logo
@@ -89,6 +89,5 @@ Le `.tga` doit rester **non compressé, 32 bits, en dimensions puissance de 2** 
 
 ## Notes
 
-- Sur les cadres de groupe et de raid, seul le texte du nom est modifié, jamais la structure des cadres. L'addon n'appelle volontairement aucune fonction de `CompactRaidFrameContainer` : ce conteneur est piloté par du code sécurisé, et l'appeler depuis un addon provoque des erreurs « action bloquée » à répétition.
-- Sur les cadres de raid, qui sont étroits, le préfixe peut tronquer les noms longs — `/gfdp group off` si c'est gênant.
+- **Les cadres de raid, et les cadres de groupe en « style raid », ne sont pas tagués.** Les taguer imposerait de hooker `CompactUnitFrame_UpdateName`, ce qui exécute du code d'addon à l'intérieur de la chaîne d'appel de Blizzard. Depuis Midnight, l'exécution est alors marquée comme contaminée, et la suite de la chaîne compare des valeurs « secrètes », ce que le client refuse : `attempt to compare local 'oldR' (a secret number value, while execution tainted by 'GFDPTag')`, répété à chaque reconstruction des cadres. Les cadres de groupe standard, eux, sont mis à jour depuis le contexte de l'addon et ne posent pas ce problème.
 - Dans le chat, le tag est placé devant le message et non dans le nom de l'auteur : modifier le nom casserait le lien cliquable et le menu contextuel du joueur.
