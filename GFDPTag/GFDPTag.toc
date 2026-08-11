@@ -1,4 +1,4 @@
-## Interface: 110200, 110107, 40402, 11507
+## Interface: 120000
 ## Title: GFDP Tag
 ## Notes: Marque les joueurs d'une liste (importee depuis un CSV) avec le tag GFDP.
 ## Notes-frFR: Marque les joueurs d'une liste (importee depuis un CSV) avec le tag GFDP.
