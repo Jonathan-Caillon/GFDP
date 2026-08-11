@@ -14,8 +14,6 @@ local function ShowHelp()
         { "/gfdp list",               "affiche la liste complete" },
         { "/gfdp count",              "nombre de joueurs dans la liste" },
         { "/gfdp clear",              "vide la liste" },
-        { "/gfdp guild [confirm]",    "ecrit le tag dans les notes publiques de guilde" },
-        { "/gfdp guild officer [confirm]", "idem, dans les notes d'officier" },
         { "/gfdp friends [confirm]",  "ecrit le tag dans les notes de la liste d'amis" },
         { "/gfdp tooltip on|off",     "tag dans les infobulles" },
         { "/gfdp chat on|off",        "tag dans le chat" },
@@ -25,7 +23,7 @@ local function ShowHelp()
     for _, line in ipairs(lines) do
         DEFAULT_CHAT_FRAME:AddMessage(("  |cffffff00%s|r  -  %s"):format(line[1], line[2]))
     end
-    DEFAULT_CHAT_FRAME:AddMessage("  |cff888888Sans 'confirm', les commandes guild/friends font une simulation.|r")
+    DEFAULT_CHAT_FRAME:AddMessage("  |cff888888Sans 'confirm', la commande friends fait une simulation.|r")
 end
 
 local function ParseToggle(value)
@@ -93,11 +91,6 @@ SlashCmdList["GFDPTAG"] = function(input)
         local removed = ns.Roster:Clear()
         ns.Group:Refresh()
         ns.Print("Liste videe (%d entree(s) supprimee(s)).", removed)
-
-    elseif cmd == "guild" or cmd == "guilde" then
-        local officer = rest:lower():find("officer") ~= nil
-        local confirm = rest:lower():find("confirm") ~= nil
-        ns.Notes:ApplyToGuild(not officer, confirm)
 
     elseif cmd == "friends" or cmd == "amis" then
         ns.Notes:ApplyToFriends(rest:lower() == "confirm")
