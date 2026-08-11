@@ -53,6 +53,7 @@ En-têtes reconnus : `nom`, `name`, `joueur`, `player`, `personnage`, `character
 |---|---|
 | Infobulle des joueurs | automatique, ligne `GFDP` sous le nom |
 | Chat | le message est préfixé de `[GFDP]` |
+| Cadres de raid | `[GFDP]` affiché juste après le nom |
 | Recherche de groupe — liste | le titre du groupe est préfixé si son **chef** est dans la liste |
 | Recherche de groupe — candidatures | le nom du **postulant** est préfixé |
 
@@ -71,6 +72,7 @@ Tout est affiché localement : l'addon n'écrit aucune donnée côté serveur.
 | `/gfdp clear` | vide la liste |
 | `/gfdp tooltip on\|off` | tag dans les infobulles |
 | `/gfdp chat on\|off` | tag dans le chat |
+| `/gfdp raid on\|off` | tag sur les cadres de raid |
 | `/gfdp lfg on\|off` | tag dans la recherche de groupe |
 | `/gfdp tag <texte>` | change le texte du tag (défaut : `GFDP`) |
 
@@ -88,5 +90,6 @@ Le `.tga` doit rester **non compressé, 32 bits, en dimensions puissance de 2** 
 
 ## Notes
 
+- Sur les cadres de raid, le tag n'est **pas** un préfixe du nom : c'est un `FontString` appartenant à l'addon, positionné juste après le texte du nom. Deux raisons. D'abord, préfixer faisait scintiller le tag, Blizzard réécrivant le nom à chaque survol de cible ; un texte qui nous appartient n'est jamais réécrit par le jeu. Ensuite, l'addon n'utilise **aucun hook** : une version antérieure passait par `hooksecurefunc("CompactUnitFrame_UpdateName")`, ce qui exécutait son code dans la chaîne d'appel de Blizzard et provoquait `attempt to compare local 'oldR' (a secret number value, while execution tainted by 'GFDPTag')` en boucle. Les cadres sont désormais atteints par leurs noms globaux (`CompactRaidFrame1`…), sans jamais toucher à `CompactRaidFrameContainer`.
 - Dans la recherche de groupe, l'addon n'utilise aucun hook : il repasse sur les lignes affichées toutes les 0,25 s, et uniquement quand la fenêtre est ouverte. C'est ce qui garantit que son code ne s'exécute jamais à l'intérieur de la chaîne d'appel du jeu. Conséquence visible : le tag peut apparaître avec un très léger décalage après un défilement.
 - Dans le chat, le tag est placé devant le message et non dans le nom de l'auteur : modifier le nom casserait le lien cliquable et le menu contextuel du joueur.

@@ -12,6 +12,7 @@ Core.lua
 Roster.lua
 Tooltip.lua
 Chat.lua
+Raid.lua
 LFG.lua
 UI.lua
 Commands.lua

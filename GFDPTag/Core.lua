@@ -10,6 +10,7 @@ local DEFAULTS = {
     color      = "33ff99",   -- couleur RRGGBB du tag
     tooltip    = true,       -- afficher le tag dans l'infobulle des joueurs
     chat       = true,       -- prefixer les messages de chat des joueurs tagges
+    raid       = true,       -- afficher le tag sur les cadres de raid
     lfg        = true,       -- afficher le tag dans la recherche de groupe
     entriesByFull = {},      -- ["nom-royaume"] = { name = "Nom", realm = "Royaume" }
     entriesByName = {},      -- ["nom"]         = { name = "Nom" }  (tous royaumes)
@@ -127,6 +128,7 @@ frame:SetScript("OnEvent", function(_, event, arg1)
     elseif event == "PLAYER_LOGIN" then
         ns.Tooltip:Init()
         ns.Chat:Init()
+        ns.Raid:Init()
         ns.LFG:Init()
         ns.Print("v%s charge. %d joueur(s) dans la liste. Tape |cffffff00/gfdp|r pour importer un CSV.",
             ns.VERSION, ns.Roster:Count())
