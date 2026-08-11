@@ -5,7 +5,7 @@
 ## Author: GFDP
 ## Version: 1.0.0
 ## SavedVariables: GFDPTagDB
-## IconTexture: Interface\Icons\INV_Misc_Note_01
+## IconTexture: Interface\AddOns\GFDPTag\Icone
 ## X-Category: Guild
 
 Core.lua
