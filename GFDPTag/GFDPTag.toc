@@ -1,7 +1,7 @@
 ## Interface: 120007
 ## Title: GFDP Tag
-## Notes: Marque les joueurs d'une liste (importee depuis un CSV) avec le tag GFDP.
-## Notes-frFR: Marque les joueurs d'une liste (importee depuis un CSV) avec le tag GFDP.
+## Notes: Marque les joueurs avec le tag GFDP.
+## Notes-frFR: Marque les joueurs avec le tag GFDP.
 ## Author: GFDP
 ## Version: 1.0.0
 ## SavedVariables: GFDPTagDB
