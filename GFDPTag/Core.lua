@@ -10,7 +10,7 @@ local DEFAULTS = {
     color      = "33ff99",   -- couleur RRGGBB du tag
     tooltip    = true,       -- afficher le tag dans l'infobulle des joueurs
     chat       = true,       -- prefixer les messages de chat des joueurs tagges
-    group      = true,       -- afficher le tag sur les cadres de groupe et de raid
+    group      = true,       -- afficher le tag sur les cadres de groupe
     entriesByFull = {},      -- ["nom-royaume"] = { name = "Nom", realm = "Royaume" }
     entriesByName = {},      -- ["nom"]         = { name = "Nom" }  (tous royaumes)
 }
@@ -70,7 +70,7 @@ function ns.ColoredTag()
     return ("|cff%s[%s]|r"):format(db.color or "33ff99", db.tag or "GFDP")
 end
 
--- Le tag brut (pour les notes de guilde / d'amis, qui n'acceptent pas les codes couleur)
+-- Le tag brut (pour les notes d'amis, qui n'acceptent pas les codes couleur)
 function ns.PlainTag()
     local db = GFDPTagDB or DEFAULTS
     return db.tag or "GFDP"

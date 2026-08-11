@@ -53,14 +53,10 @@ En-têtes reconnus : `nom`, `name`, `joueur`, `player`, `personnage`, `character
 |---|---|
 | Infobulle des joueurs | automatique, ligne `GFDP` sous le nom |
 | Chat | le message est préfixé de `[GFDP]` |
-| Cadres de groupe et de raid | le nom affiché est préfixé de `[GFDP]` |
-| Notes de guilde | `/gfdp guild confirm` — écrit `GFDP` dans la note publique |
-| Notes d'officier | `/gfdp guild officer confirm` |
+| Cadres de groupe | le nom affiché est préfixé de `[GFDP]` |
 | Notes d'amis | `/gfdp friends confirm` |
 
-Les trois dernières écrivent réellement des données côté serveur. **Sans le mot `confirm`, la commande fait une simulation** et se contente d'afficher ce qui serait modifié. Les écritures sont espacées de 0,25 s pour éviter la limitation serveur, et une note déjà taguée n'est jamais modifiée deux fois.
-
-Les notes de guilde sont limitées à 31 caractères par le client : une note trop longue pour accueillir le tag est ignorée et signalée.
+La dernière écrit réellement des données côté serveur. **Sans le mot `confirm`, la commande fait une simulation** et se contente d'afficher ce qui serait modifié. Les écritures sont espacées de 0,25 s pour éviter la limitation serveur, et une note déjà taguée n'est jamais modifiée deux fois.
 
 ## Commandes
 
@@ -73,12 +69,10 @@ Les notes de guilde sont limitées à 31 caractères par le client : une note tr
 | `/gfdp list` | affiche la liste complète |
 | `/gfdp count` | nombre de joueurs |
 | `/gfdp clear` | vide la liste |
-| `/gfdp guild [confirm]` | tag dans les notes publiques de guilde |
-| `/gfdp guild officer [confirm]` | tag dans les notes d'officier |
 | `/gfdp friends [confirm]` | tag dans les notes d'amis |
 | `/gfdp tooltip on\|off` | tag dans les infobulles |
 | `/gfdp chat on\|off` | tag dans le chat |
-| `/gfdp group on\|off` | tag sur les cadres de groupe et de raid |
+| `/gfdp group on\|off` | tag sur les cadres de groupe |
 | `/gfdp tag <texte>` | change le texte du tag (défaut : `GFDP`) |
 
 ## Logo
@@ -95,7 +89,5 @@ Le `.tga` doit rester **non compressé, 32 bits, en dimensions puissance de 2** 
 
 ## Notes
 
-- Modifier les notes de guilde nécessite le droit correspondant dans le grade ; l'addon vérifie avant d'écrire.
-- Si `/gfdp guild` annonce que le roster n'est pas chargé, ouvrir l'onglet Guilde puis relancer la commande (le roster se charge de façon asynchrone).
-- Sur les cadres de groupe et de raid, seul le texte du nom est modifié : aucune frame protégée n'est touchée, donc pas de blocage en combat. Sur les cadres de raid, qui sont étroits, le préfixe peut tronquer les noms longs — `/gfdp group off` si c'est gênant.
+- **Les cadres de raid, et les cadres de groupe en « style raid », ne sont pas tagués.** Les taguer imposerait de hooker `CompactUnitFrame_UpdateName`, ce qui exécute du code d'addon à l'intérieur de la chaîne d'appel de Blizzard. Depuis Midnight, l'exécution est alors marquée comme contaminée, et la suite de la chaîne compare des valeurs « secrètes », ce que le client refuse : `attempt to compare local 'oldR' (a secret number value, while execution tainted by 'GFDPTag')`, répété à chaque reconstruction des cadres. Les cadres de groupe standard, eux, sont mis à jour depuis le contexte de l'addon et ne posent pas ce problème.
 - Dans le chat, le tag est placé devant le message et non dans le nom de l'auteur : modifier le nom casserait le lien cliquable et le menu contextuel du joueur.
