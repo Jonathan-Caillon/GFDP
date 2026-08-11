@@ -54,6 +54,8 @@ En-têtes reconnus : `nom`, `name`, `joueur`, `player`, `personnage`, `character
 | Infobulle des joueurs | automatique, ligne `GFDP` sous le nom |
 | Chat | le message est préfixé de `[GFDP]` |
 | Cadres de groupe | le nom affiché est préfixé de `[GFDP]` |
+| Recherche de groupe — liste | le titre du groupe est préfixé si son **chef** est dans la liste |
+| Recherche de groupe — candidatures | le nom du **postulant** est préfixé |
 
 Tout est affiché localement : l'addon n'écrit aucune donnée côté serveur.
 
@@ -71,6 +73,7 @@ Tout est affiché localement : l'addon n'écrit aucune donnée côté serveur.
 | `/gfdp tooltip on\|off` | tag dans les infobulles |
 | `/gfdp chat on\|off` | tag dans le chat |
 | `/gfdp group on\|off` | tag sur les cadres de groupe |
+| `/gfdp lfg on\|off` | tag dans la recherche de groupe |
 | `/gfdp tag <texte>` | change le texte du tag (défaut : `GFDP`) |
 
 ## Logo
@@ -88,4 +91,5 @@ Le `.tga` doit rester **non compressé, 32 bits, en dimensions puissance de 2** 
 ## Notes
 
 - **Les cadres de raid, et les cadres de groupe en « style raid », ne sont pas tagués.** Les taguer imposerait de hooker `CompactUnitFrame_UpdateName`, ce qui exécute du code d'addon à l'intérieur de la chaîne d'appel de Blizzard. Depuis Midnight, l'exécution est alors marquée comme contaminée, et la suite de la chaîne compare des valeurs « secrètes », ce que le client refuse : `attempt to compare local 'oldR' (a secret number value, while execution tainted by 'GFDPTag')`, répété à chaque reconstruction des cadres. Les cadres de groupe standard, eux, sont mis à jour depuis le contexte de l'addon et ne posent pas ce problème.
+- Dans la recherche de groupe, l'addon n'utilise aucun hook : il repasse sur les lignes affichées toutes les 0,25 s, et uniquement quand la fenêtre est ouverte. C'est ce qui garantit que son code ne s'exécute jamais à l'intérieur de la chaîne d'appel du jeu. Conséquence visible : le tag peut apparaître avec un très léger décalage après un défilement.
 - Dans le chat, le tag est placé devant le message et non dans le nom de l'auteur : modifier le nom casserait le lien cliquable et le menu contextuel du joueur.

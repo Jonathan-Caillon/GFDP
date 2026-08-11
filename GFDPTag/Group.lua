@@ -4,31 +4,20 @@ local ADDON_NAME, ns = ...
 local Group = {}
 ns.Group = Group
 
--- Retire un prefixe deja pose, quels que soient la couleur et le texte du tag.
-local function Strip(text)
-    if not text or text == "" then return text end
-    return (text:gsub("^|cff%x%x%x%x%x%x%[.-%]|r ", ""))
-end
-
 --- Pose ou retire le tag selon que l'unite est dans la liste.
 local function Apply(fontString, unit)
     if not ns.db then return end
     if not fontString or not unit then return end
 
-    local current = fontString:GetText()
-    if not current or current == "" then return end
-
-    local wanted = Strip(current)
-    if ns.db.group and UnitExists(unit) and UnitIsPlayer(unit) then
+    local fullName
+    if UnitExists(unit) and UnitIsPlayer(unit) then
         local name, realm = UnitName(unit)
-        if name and ns.Roster:IsTagged(name, realm) then
-            wanted = ns.ColoredTag() .. " " .. wanted
+        if name then
+            fullName = (realm and realm ~= "") and (name .. "-" .. realm) or name
         end
     end
 
-    if wanted ~= current then
-        fontString:SetText(wanted)
-    end
+    ns.ApplyTagTo(fontString, fullName, ns.db.group)
 end
 
 -- Parcourt les cadres de groupe standard.

@@ -13,5 +13,6 @@ Roster.lua
 Tooltip.lua
 Chat.lua
 Group.lua
+LFG.lua
 UI.lua
 Commands.lua
