@@ -1,0 +1,17 @@
+## Interface: 110200, 110107, 40402, 11507
+## Title: GFDP Tag
+## Notes: Marque les joueurs d'une liste (importee depuis un CSV) avec le tag GFDP.
+## Notes-frFR: Marque les joueurs d'une liste (importee depuis un CSV) avec le tag GFDP.
+## Author: GFDP
+## Version: 1.0.0
+## SavedVariables: GFDPTagDB
+## IconTexture: Interface\Icons\INV_Misc_Note_01
+## X-Category: Guild
+
+Core.lua
+Roster.lua
+Tooltip.lua
+Chat.lua
+Notes.lua
+UI.lua
+Commands.lua
