@@ -134,7 +134,6 @@ function UI:DoImport(replace)
         stats.skipped > 0 and (", " .. stats.skipped .. " ignoree(s)") or "",
         ns.Roster:Count())
 
-    ns.Group:Refresh()
     self.frame.edit:SetText("")
     self.frame:Hide()
 end

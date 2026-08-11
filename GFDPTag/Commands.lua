@@ -16,7 +16,6 @@ local function ShowHelp()
         { "/gfdp clear",              "vide la liste" },
         { "/gfdp tooltip on|off",     "tag dans les infobulles" },
         { "/gfdp chat on|off",        "tag dans le chat" },
-        { "/gfdp group on|off",       "tag sur les cadres de groupe" },
         { "/gfdp lfg on|off",         "tag dans la recherche de groupe" },
         { "/gfdp tag <texte>",        "change le texte du tag (defaut : GFDP)" },
     }
@@ -45,7 +44,6 @@ SlashCmdList["GFDPTAG"] = function(input)
         if rest == "" then
             ns.Print("Usage : /gfdp add <Nom[-Royaume]>")
         elseif ns.Roster:Add(rest) then
-            ns.Group:Refresh()
             ns.Print("|cff33ff99%s|r ajoute a la liste (total : %d).", rest, ns.Roster:Count())
         else
             ns.Print("%s est deja dans la liste.", rest)
@@ -55,7 +53,6 @@ SlashCmdList["GFDPTAG"] = function(input)
         if rest == "" then
             ns.Print("Usage : /gfdp del <Nom[-Royaume]>")
         elseif ns.Roster:Remove(rest) then
-            ns.Group:Refresh()
             ns.Print("%s retire de la liste (total : %d).", rest, ns.Roster:Count())
         else
             ns.Print("%s n'est pas dans la liste.", rest)
@@ -88,7 +85,6 @@ SlashCmdList["GFDPTAG"] = function(input)
 
     elseif cmd == "clear" or cmd == "vider" then
         local removed = ns.Roster:Clear()
-        ns.Group:Refresh()
         ns.Print("Liste videe (%d entree(s) supprimee(s)).", removed)
 
     elseif cmd == "tooltip" or cmd == "infobulle" then
@@ -107,16 +103,6 @@ SlashCmdList["GFDPTAG"] = function(input)
         else
             ns.db.chat = value
             ns.Print("Chat %s.", value and "active" or "desactive")
-        end
-
-    elseif cmd == "group" or cmd == "groupe" then
-        local value = ParseToggle(rest)
-        if value == nil then
-            ns.Print("Cadres de groupe : %s. Usage : /gfdp group on|off", ns.db.group and "active" or "desactive")
-        else
-            ns.db.group = value
-            ns.Group:Refresh()
-            ns.Print("Tag sur les cadres de groupe %s.", value and "active" or "desactive")
         end
 
     elseif cmd == "lfg" or cmd == "recherche" then
