@@ -17,7 +17,6 @@ local function ShowHelp()
         { "/gfdp tooltip on|off",     "tag dans les infobulles" },
         { "/gfdp chat on|off",        "tag dans le chat" },
         { "/gfdp raid on|off",        "tag sur les cadres de raid" },
-        { "/gfdp lfg on|off",         "tag dans la recherche de groupe" },
         { "/gfdp tag <texte>",        "change le texte du tag (defaut : GFDP)" },
     }
     for _, line in ipairs(lines) do
@@ -114,16 +113,6 @@ SlashCmdList["GFDPTAG"] = function(input)
             ns.db.raid = value
             ns.Raid:Update()   -- retire les tags deja poses si on desactive
             ns.Print("Tag sur les cadres de raid %s.", value and "active" or "desactive")
-        end
-
-    elseif cmd == "lfg" or cmd == "recherche" then
-        local value = ParseToggle(rest)
-        if value == nil then
-            ns.Print("Recherche de groupe : %s. Usage : /gfdp lfg on|off", ns.db.lfg and "active" or "desactive")
-        else
-            ns.db.lfg = value
-            ns.LFG:Refresh()   -- retire les tags deja poses si on desactive
-            ns.Print("Tag dans la recherche de groupe %s.", value and "active" or "desactive")
         end
 
     elseif cmd == "tag" then

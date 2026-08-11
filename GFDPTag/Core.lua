@@ -11,7 +11,6 @@ local DEFAULTS = {
     tooltip    = true,       -- afficher le tag dans l'infobulle des joueurs
     chat       = true,       -- prefixer les messages de chat des joueurs tagges
     raid       = true,       -- afficher le tag sur les cadres de raid
-    lfg        = true,       -- afficher le tag dans la recherche de groupe
     entriesByFull = {},      -- ["nom-royaume"] = { name = "Nom", realm = "Royaume" }
     entriesByName = {},      -- ["nom"]         = { name = "Nom" }  (tous royaumes)
 }
@@ -71,36 +70,6 @@ function ns.ColoredTag()
     return ("|cff%s[%s]|r"):format(db.color or "33ff99", db.tag or "GFDP")
 end
 
--- Retire un prefixe de tag deja pose, quels que soient sa couleur et son texte.
-function ns.StripTag(text)
-    if not text or text == "" then return text end
-    return (text:gsub("^|cff%x%x%x%x%x%x%[.-%]|r ", ""))
-end
-
---- Pose ou retire le tag devant le texte d'un FontString.
--- Idempotent : appeler plusieurs fois n'empile pas les prefixes.
--- @param fontString le FontString a modifier
--- @param fullName   "Nom" ou "Nom-Royaume" du joueur concerne, ou nil
--- @param enabled    false pour forcer le retrait du tag
-function ns.ApplyTagTo(fontString, fullName, enabled)
-    if not fontString or not fontString.GetText then return end
-
-    local current = fontString:GetText()
-    if not current or current == "" then return end
-
-    local wanted = ns.StripTag(current)
-    if enabled and fullName and fullName ~= "" then
-        local name, realm = ns.SplitName(fullName)
-        if ns.Roster:IsTagged(name, realm) then
-            wanted = ns.ColoredTag() .. " " .. wanted
-        end
-    end
-
-    if wanted ~= current then
-        fontString:SetText(wanted)
-    end
-end
-
 --------------------------------------------------------------------------------
 -- Initialisation
 --------------------------------------------------------------------------------
@@ -129,7 +98,6 @@ frame:SetScript("OnEvent", function(_, event, arg1)
         ns.Tooltip:Init()
         ns.Chat:Init()
         ns.Raid:Init()
-        ns.LFG:Init()
         ns.Print("v%s charge. %d joueur(s) dans la liste. Tape |cffffff00/gfdp|r pour importer un CSV.",
             ns.VERSION, ns.Roster:Count())
     end
