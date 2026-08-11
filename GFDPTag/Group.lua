@@ -4,22 +4,44 @@ local ADDON_NAME, ns = ...
 local Group = {}
 ns.Group = Group
 
--- Prefixe le nom affiche par le tag, sans jamais l'appliquer deux fois.
-local function Decorate(fontString, unit)
-    if not ns.db or not ns.db.group then return end
-    if not fontString or not unit then return end
-    if not UnitExists(unit) or not UnitIsPlayer(unit) then return end
+-- Garde-fou : SetText ne redeclenche pas UpdateName, mais si un autre addon
+-- s'intercale dans la chaine, ce drapeau empeche toute reentrance.
+local busy = false
 
-    local name, realm = UnitName(unit)
-    if not name or not ns.Roster:IsTagged(name, realm) then return end
+-- Retire un prefixe deja pose, quels que soient la couleur et le texte du tag.
+local function Strip(text)
+    if not text or text == "" then return text end
+    return (text:gsub("^|cff%x%x%x%x%x%x%[.-%]|r ", ""))
+end
+
+--- Pose ou retire le tag selon que l'unite est dans la liste.
+-- Le retrait est fait ici aussi : c'est ce qui permet a un /gfdp del de
+-- s'appliquer aux cadres de raid sans avoir a forcer un rafraichissement.
+local function Apply(fontString, unit)
+    if busy then return end
+    if not ns.db then return end
+    if not fontString or not unit then return end
 
     local current = fontString:GetText()
     if not current or current == "" then return end
 
-    local prefix = ns.ColoredTag() .. " "
-    if current:sub(1, #prefix) == prefix then return end   -- deja decore
+    local wanted = current
+    if ns.db.group and UnitExists(unit) and UnitIsPlayer(unit) then
+        local name, realm = UnitName(unit)
+        if name and ns.Roster:IsTagged(name, realm) then
+            wanted = ns.ColoredTag() .. " " .. Strip(current)
+        else
+            wanted = Strip(current)
+        end
+    else
+        wanted = Strip(current)
+    end
 
-    fontString:SetText(prefix .. current)
+    if wanted ~= current then
+        busy = true
+        fontString:SetText(wanted)
+        busy = false
+    end
 end
 
 -- Parcourt les cadres de groupe, quelle que soit la version du client.
@@ -42,32 +64,17 @@ local function ForEachPartyFrame(callback)
     end
 end
 
--- Retire un prefixe deja pose. Blizzard ne reecrit le nom des cadres de groupe
--- qu'au prochain changement de roster : sans ce nettoyage, le tag resterait
--- affiche apres un /gfdp del ou un /gfdp group off.
-local function Undecorate(fontString)
-    if not fontString then return end
-    local current = fontString:GetText()
-    if not current or current == "" then return end
-    local stripped = current:gsub("^|cff%x%x%x%x%x%x%[.-%]|r ", "")
-    if stripped ~= current then
-        fontString:SetText(stripped)
-    end
-end
-
 function Group:UpdatePartyFrames()
-    ForEachPartyFrame(function(fontString, unit)
-        Undecorate(fontString)
-        Decorate(fontString, unit)
-    end)
+    ForEachPartyFrame(Apply)
 end
 
---- Reapplique le tag partout (apres un import ou un changement de reglage).
+--- Reapplique le tag apres un import ou un changement de reglage.
+-- Ne touche volontairement pas aux cadres de raid : CompactRaidFrameContainer
+-- est pilote par du code securise, l'appeler depuis un addon le contaminerait
+-- et provoquerait des "action bloquee" a repetition. Les cadres de raid se
+-- remettent a jour seuls au prochain passage de Blizzard sur UpdateName.
 function Group:Refresh()
     self:UpdatePartyFrames()
-    if CompactRaidFrameContainer and CompactRaidFrameContainer.TryUpdate then
-        CompactRaidFrameContainer:TryUpdate()
-    end
 end
 
 function Group:Init()
@@ -79,19 +86,28 @@ function Group:Init()
     if CompactUnitFrame_UpdateName then
         hooksecurefunc("CompactUnitFrame_UpdateName", function(frame)
             if frame and frame.unit and frame.name then
-                Decorate(frame.name, frame.unit)
+                Apply(frame.name, frame.unit)
             end
         end)
     end
 
-    -- Cadres de groupe classiques : pas de fonction globale a hooker sur toutes
+    -- Cadres de groupe classiques : aucune fonction globale hookable sur toutes
     -- les versions, on repasse donc sur evenement.
+    --
+    -- UNIT_NAME_UPDATE n'est volontairement PAS ecoute : sans filtre il se
+    -- declenche pour toutes les unites du monde, des dizaines de fois par
+    -- seconde, et empilait autant de timers. Le nom des membres est de toute
+    -- facon ecrit lors des changements de roster.
+    local pending = false
     local watcher = CreateFrame("Frame")
     watcher:RegisterEvent("GROUP_ROSTER_UPDATE")
     watcher:RegisterEvent("PLAYER_ENTERING_WORLD")
-    watcher:RegisterEvent("UNIT_NAME_UPDATE")
     watcher:SetScript("OnEvent", function()
-        -- Blizzard ecrit le nom dans la meme frame que l'evenement : on repasse apres.
-        C_Timer.After(0.1, function() Group:UpdatePartyFrames() end)
+        if pending then return end   -- un seul passage en attente a la fois
+        pending = true
+        C_Timer.After(0.1, function()
+            pending = false
+            Group:UpdatePartyFrames()
+        end)
     end)
 end
