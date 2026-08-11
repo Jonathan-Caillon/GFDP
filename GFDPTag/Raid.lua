@@ -79,14 +79,23 @@ function Raid:Update()
         local nameString = frame.name
         if not nameString then return end
 
-        local show = ns.db and ns.db.raid
-            and frame.unit
-            and frame:IsShown()
-            and UnitExists(frame.unit)
-            and UnitIsPlayer(frame.unit)
+        -- frame.unit peut etre une valeur "secrete" : le passer a UnitIsPlayer ou
+        -- UnitName provoquerait une erreur en execution contaminee. ns.IsSecret
+        -- le teste avant, et on se rabat sur le nom affiche le cas echeant --
+        -- sans royaume, donc, la correspondance se faisant alors sur le royaume
+        -- du joueur connecte.
+        local show = false
+        if ns.db and ns.db.raid and frame:IsShown() then
+            local name, realm = ns.UnitNameRealm(frame.unit)
 
-        if show then
-            local name, realm = UnitName(frame.unit)
+            if not name then
+                local displayed = nameString:GetText()
+                if type(displayed) == "string" and displayed ~= "" then
+                    name = ns.Trim((displayed:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")))
+                    if name == "" then name = nil end
+                end
+            end
+
             show = (name and ns.Roster:IsTagged(name, realm)) and true or false
         end
 
@@ -117,9 +126,15 @@ function Raid:Init()
     --
     -- Ici tout se fait depuis notre propre contexte : on ne compare aucune
     -- valeur secrete et on n'appelle aucune fonction protegee.
+    -- Coupe-circuit : le sondage tourne en continu, une erreur non capturee
+    -- serait repetee deux fois par seconde. On previent une fois et on s'arrete.
+    local disabled = false
+
     local elapsed = 0
     local driver = CreateFrame("Frame")
     driver:SetScript("OnUpdate", function(_, delta)
+        if disabled then return end
+
         elapsed = elapsed + delta
         if elapsed < INTERVAL then return end
         elapsed = 0
@@ -127,6 +142,10 @@ function Raid:Init()
         if not ns.db or not ns.db.raid then return end
         if not IsInGroup() then return end
 
-        Raid:Update()
+        local ok, err = pcall(Raid.Update, Raid)
+        if not ok then
+            disabled = true
+            ns.Print("|cffff5555Tag sur les cadres de raid desactive|r apres une erreur : %s", tostring(err))
+        end
     end)
 end

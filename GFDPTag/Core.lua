@@ -64,6 +64,30 @@ function ns.PlayerRealm()
     return ns.NormalizeRealm(realm)
 end
 
+-- La valeur est-elle "secrete" ? Depuis Midnight, l'interface fournit des
+-- valeurs que les API refusent de traiter en execution contaminee. Les tester
+-- avant de les utiliser evite l'erreur plutot que de la subir.
+function ns.IsSecret(value)
+    if not issecretvalue then return false end
+    return issecretvalue(value) and true or false
+end
+
+--- Nom et royaume d'un joueur a partir d'un jeton d'unite.
+-- @return name, realm  ou nil si l'unite est inutilisable
+function ns.UnitNameRealm(unit)
+    if not unit or ns.IsSecret(unit) then return end
+    if not UnitIsPlayer(unit) then return end
+
+    local name, realm = UnitNameUnmodified(unit)
+    if not name or ns.IsSecret(name) or ns.IsSecret(realm) then return end
+
+    -- Un royaume vide signifie "le meme que le joueur connecte"
+    if not realm or realm == "" then
+        realm = GetNormalizedRealmName()
+    end
+    return name, realm
+end
+
 -- Le tag colore, pret a etre insere dans du texte
 function ns.ColoredTag()
     local db = GFDPTagDB or DEFAULTS

@@ -10,7 +10,9 @@ Copier le dossier `GFDPTag` dans :
 World of Warcraft\_retail_\Interface\AddOns\GFDPTag
 ```
 
-(ou `_classic_` / `_classic_era_` selon la version). Redémarrer le jeu, ou taper `/reload` si le client tourne déjà.
+Redémarrer le jeu, ou taper `/reload` si le client tourne déjà.
+
+L'addon vise **uniquement le client retail** : il utilise des API absentes de Classic (`TooltipDataProcessor`), et le `.toc` déclare l'interface retail.
 
 ## Importer la liste
 
@@ -88,4 +90,7 @@ Le `.tga` doit rester **non compressé, 32 bits, en dimensions puissance de 2** 
 ## Notes
 
 - Sur les cadres de raid, le tag n'est **pas** un préfixe du nom : c'est un `FontString` appartenant à l'addon, positionné juste après le texte du nom. Deux raisons. D'abord, préfixer faisait scintiller le tag, Blizzard réécrivant le nom à chaque survol de cible ; un texte qui nous appartient n'est jamais réécrit par le jeu. Ensuite, l'addon n'utilise **aucun hook** : une version antérieure passait par `hooksecurefunc("CompactUnitFrame_UpdateName")`, ce qui exécutait son code dans la chaîne d'appel de Blizzard et provoquait `attempt to compare local 'oldR' (a secret number value, while execution tainted by 'GFDPTag')` en boucle. Les cadres sont désormais atteints par leurs noms globaux (`CompactRaidFrame1`…), sans jamais toucher à `CompactRaidFrameContainer`.
+- Depuis Midnight, `tooltip:GetUnit()` renvoie une valeur « secrète » : la passer à `UnitExists`, `UnitIsPlayer` ou `UnitName` est refusé tant que l'exécution est contaminée, ce qui est toujours le cas dans le code d'un addon. L'infobulle passe donc par le **GUID** de `GetPrimaryTooltipData()`, qui reste exploitable, et le reconvertit en jeton d'unité avec `UnitTokenFromGUID`. Technique reprise de l'addon [RaiderIO](https://github.com/RaiderIO/raiderio-addon).
+
+  Chaque valeur est testée avec `issecretvalue()` avant usage, plutôt que de subir l'erreur. En dernier recours, l'addon se rabat sur le nom affiché dans l'infobulle — sans royaume, la correspondance se faisant alors sur ton propre royaume.
 - Dans le chat, le tag est placé devant le message et non dans le nom de l'auteur : modifier le nom casserait le lien cliquable et le menu contextuel du joueur.
