@@ -19,6 +19,7 @@ local function ShowHelp()
         { "/gfdp friends [confirm]",  "ecrit le tag dans les notes de la liste d'amis" },
         { "/gfdp tooltip on|off",     "tag dans les infobulles" },
         { "/gfdp chat on|off",        "tag dans le chat" },
+        { "/gfdp group on|off",       "tag sur les cadres de groupe et de raid" },
         { "/gfdp tag <texte>",        "change le texte du tag (defaut : GFDP)" },
     }
     for _, line in ipairs(lines) do
@@ -47,6 +48,7 @@ SlashCmdList["GFDPTAG"] = function(input)
         if rest == "" then
             ns.Print("Usage : /gfdp add <Nom[-Royaume]>")
         elseif ns.Roster:Add(rest) then
+            ns.Group:Refresh()
             ns.Print("|cff33ff99%s|r ajoute a la liste (total : %d).", rest, ns.Roster:Count())
         else
             ns.Print("%s est deja dans la liste.", rest)
@@ -56,6 +58,7 @@ SlashCmdList["GFDPTAG"] = function(input)
         if rest == "" then
             ns.Print("Usage : /gfdp del <Nom[-Royaume]>")
         elseif ns.Roster:Remove(rest) then
+            ns.Group:Refresh()
             ns.Print("%s retire de la liste (total : %d).", rest, ns.Roster:Count())
         else
             ns.Print("%s n'est pas dans la liste.", rest)
@@ -88,6 +91,7 @@ SlashCmdList["GFDPTAG"] = function(input)
 
     elseif cmd == "clear" or cmd == "vider" then
         local removed = ns.Roster:Clear()
+        ns.Group:Refresh()
         ns.Print("Liste videe (%d entree(s) supprimee(s)).", removed)
 
     elseif cmd == "guild" or cmd == "guilde" then
@@ -114,6 +118,16 @@ SlashCmdList["GFDPTAG"] = function(input)
         else
             ns.db.chat = value
             ns.Print("Chat %s.", value and "active" or "desactive")
+        end
+
+    elseif cmd == "group" or cmd == "groupe" then
+        local value = ParseToggle(rest)
+        if value == nil then
+            ns.Print("Groupe/raid : %s. Usage : /gfdp group on|off", ns.db.group and "active" or "desactive")
+        else
+            ns.db.group = value
+            ns.Group:Refresh()
+            ns.Print("Tag sur les cadres de groupe et de raid %s.", value and "active" or "desactive")
         end
 
     elseif cmd == "tag" then
