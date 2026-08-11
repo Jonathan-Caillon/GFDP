@@ -79,6 +79,18 @@ Les notes de guilde sont limitées à 31 caractères par le client : une note tr
 | `/gfdp chat on\|off` | tag dans le chat |
 | `/gfdp tag <texte>` | change le texte du tag (défaut : `GFDP`) |
 
+## Logo
+
+Le logo est `Icone.tga` : il apparaît dans la liste des addons (via `## IconTexture` dans le `.toc`) et en haut de la fenêtre d'import.
+
+**Le client WoW ne lit pas le PNG** : pour changer le logo, repartir d'une image source et la convertir en TGA.
+
+```bash
+python -c "from PIL import Image; im=Image.open('source.png').convert('RGBA'); s=min(im.size); l,t=(im.size[0]-s)//2,(im.size[1]-s)//2; im.crop((l,t,l+s,t+s)).resize((128,128), Image.LANCZOS).save('Icone.tga', format='TGA')"
+```
+
+Le `.tga` doit rester **non compressé, 32 bits, en dimensions puissance de 2** (ici 128×128), sinon la texture ne s'affiche pas.
+
 ## Notes
 
 - Modifier les notes de guilde nécessite le droit correspondant dans le grade ; l'addon vérifie avant d'écrire.

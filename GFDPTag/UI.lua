@@ -32,16 +32,27 @@ local function CreateFrame_Import()
         f.TitleContainer.TitleText:SetText(title)
     end
 
+    -- Logo de l'addon (Icone.tga : le client ne lit ni PNG ni JPEG)
+    local logo = f:CreateTexture(nil, "ARTWORK")
+    logo:SetSize(48, 48)
+    logo:SetPoint("TOPLEFT", 18, -32)
+    logo:SetTexture("Interface\\AddOns\\GFDPTag\\Icone")
+
+    local logoBorder = f:CreateTexture(nil, "BACKGROUND")
+    logoBorder:SetPoint("TOPLEFT", logo, -2, 2)
+    logoBorder:SetPoint("BOTTOMRIGHT", logo, 2, -2)
+    logoBorder:SetColorTexture(0, 0, 0, 0.8)
+
     -- Texte d'aide
     local help = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    help:SetPoint("TOPLEFT", 18, -34)
-    help:SetPoint("TOPRIGHT", -18, -34)
+    help:SetPoint("TOPLEFT", logo, "TOPRIGHT", 12, 0)
+    help:SetPoint("TOPRIGHT", f, "TOPRIGHT", -18, -32)
     help:SetJustifyH("LEFT")
     help:SetText(HELP_TEXT)
 
     -- Zone de saisie defilante
     local scroll = CreateFrame("ScrollFrame", "GFDPTagImportScroll", f, "UIPanelScrollFrameTemplate")
-    scroll:SetPoint("TOPLEFT", help, "BOTTOMLEFT", 0, -12)
+    scroll:SetPoint("TOPLEFT", f, "TOPLEFT", 18, -92)
     scroll:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -34, 76)
 
     local edit = CreateFrame("EditBox", "GFDPTagImportEditBox", scroll)
