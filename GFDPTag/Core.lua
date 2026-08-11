@@ -70,12 +70,6 @@ function ns.ColoredTag()
     return ("|cff%s[%s]|r"):format(db.color or "33ff99", db.tag or "GFDP")
 end
 
--- Le tag brut (pour les notes d'amis, qui n'acceptent pas les codes couleur)
-function ns.PlainTag()
-    local db = GFDPTagDB or DEFAULTS
-    return db.tag or "GFDP"
-end
-
 --------------------------------------------------------------------------------
 -- Initialisation
 --------------------------------------------------------------------------------
