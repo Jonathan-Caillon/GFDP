@@ -54,9 +54,8 @@ En-têtes reconnus : `nom`, `name`, `joueur`, `player`, `personnage`, `character
 | Infobulle des joueurs | automatique, ligne `GFDP` sous le nom |
 | Chat | le message est préfixé de `[GFDP]` |
 | Cadres de groupe | le nom affiché est préfixé de `[GFDP]` |
-| Notes d'amis | `/gfdp friends confirm` |
 
-La dernière écrit réellement des données côté serveur. **Sans le mot `confirm`, la commande fait une simulation** et se contente d'afficher ce qui serait modifié. Les écritures sont espacées de 0,25 s pour éviter la limitation serveur, et une note déjà taguée n'est jamais modifiée deux fois.
+Tout est affiché localement : l'addon n'écrit aucune donnée côté serveur.
 
 ## Commandes
 
@@ -69,7 +68,6 @@ La dernière écrit réellement des données côté serveur. **Sans le mot `conf
 | `/gfdp list` | affiche la liste complète |
 | `/gfdp count` | nombre de joueurs |
 | `/gfdp clear` | vide la liste |
-| `/gfdp friends [confirm]` | tag dans les notes d'amis |
 | `/gfdp tooltip on\|off` | tag dans les infobulles |
 | `/gfdp chat on\|off` | tag dans le chat |
 | `/gfdp group on\|off` | tag sur les cadres de groupe |
