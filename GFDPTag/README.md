@@ -59,6 +59,16 @@ En-têtes reconnus : `nom`, `name`, `joueur`, `player`, `personnage`, `character
 
 Tout est affiché localement : l'addon n'écrit aucune donnée côté serveur.
 
+## Ajouter un joueur en jeu
+
+Clic droit sur le portrait d'un joueur — ta cible, un membre du groupe, ton focus, ou son nom dans le chat — puis **Ajouter au tag GFDP** en bas du menu. La même entrée devient **Retirer du tag GFDP** si le joueur y est déjà.
+
+Le royaume est repris automatiquement, donc un joueur d'un autre royaume est enregistré comme `Nom-Royaume` et non confondu avec un homonyme du tien.
+
+L'entrée **n'apparaît jamais sur un PNJ**. Le menu de la cible et celui du focus s'ouvrent aussi bien sur une créature, un familier ou un véhicule ; l'addon vérifie le préfixe du GUID (`Player-`) avant de proposer quoi que ce soit, et s'abstient s'il ne peut pas conclure.
+
+**Le tout premier menu ouvert dans une session n'aura pas l'entrée** — il faut le rouvrir une fois. C'est délibéré : appeler `Menu.ModifyMenu` dès la connexion se fait avant que le code sécurisé du jeu ait initialisé son état interne, ce qui contamine tout le système de menus. L'addon attend donc que Blizzard ouvre un menu avant de s'enregistrer. Approche reprise de [RaiderIO](https://github.com/RaiderIO/raiderio-addon).
+
 ## Commandes
 
 | Commande | Effet |

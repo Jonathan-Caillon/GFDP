@@ -122,6 +122,7 @@ frame:SetScript("OnEvent", function(_, event, arg1)
         ns.Tooltip:Init()
         ns.Chat:Init()
         ns.Raid:Init()
+        ns.ContextMenu:Init()
         ns.Print("v%s charge. %d joueur(s) dans la liste. Tape |cffffff00/gfdp|r pour importer un CSV.",
             ns.VERSION, ns.Roster:Count())
     end
