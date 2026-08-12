@@ -1,4 +1,4 @@
-## Interface: 120007
+## Interface: 120100
 ## Title: GFDP Tag
 ## Notes: Marque les joueurs avec le tag GFDP.
 ## Notes-frFR: Marque les joueurs avec le tag GFDP.
