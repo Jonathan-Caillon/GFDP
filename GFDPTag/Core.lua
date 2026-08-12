@@ -72,19 +72,31 @@ function ns.IsSecret(value)
     return issecretvalue(value) and true or false
 end
 
+--- Renvoie la valeur si c'est une chaine exploitable, sinon nil.
+--
+-- L'ORDRE DES TESTS EST CRITIQUE : le caractere secret doit etre verifie AVANT
+-- toute comparaison, indexation ou concatenation. Comparer une valeur secrete
+-- en execution contaminee leve une erreur, y compris pour un simple == "".
+-- Tout passage par ce helper garantit le bon ordre.
+function ns.SafeString(value)
+    if ns.IsSecret(value) then return nil end
+    if type(value) ~= "string" or value == "" then return nil end
+    return value
+end
+
 --- Nom et royaume d'un joueur a partir d'un jeton d'unite.
 -- @return name, realm  ou nil si l'unite est inutilisable
 function ns.UnitNameRealm(unit)
-    if not unit or ns.IsSecret(unit) then return end
+    unit = ns.SafeString(unit)
+    if not unit then return end
     if not UnitIsPlayer(unit) then return end
 
     local name, realm = UnitNameUnmodified(unit)
-    if not name or ns.IsSecret(name) or ns.IsSecret(realm) then return end
+    name = ns.SafeString(name)
+    if not name then return end
 
-    -- Un royaume vide signifie "le meme que le joueur connecte"
-    if not realm or realm == "" then
-        realm = GetNormalizedRealmName()
-    end
+    -- Un royaume secret, absent ou vide signifie "le meme que le joueur connecte"
+    realm = ns.SafeString(realm) or GetNormalizedRealmName()
     return name, realm
 end
 

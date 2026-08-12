@@ -17,9 +17,12 @@ local EVENTS = {
 -- modifier le nom casserait le lien cliquable et le menu contextuel du joueur.
 local function Filter(frame, event, msg, author, ...)
     if not ns.db or not ns.db.chat then return false end
-    if not author or author == "" then return false end
 
-    local name, realm = ns.SplitName(author)
+    -- Teste le caractere secret avant toute comparaison : voir ns.SafeString
+    local sender = ns.SafeString(author)
+    if not sender then return false end
+
+    local name, realm = ns.SplitName(sender)
     if ns.Roster:IsTagged(name, realm) then
         return false, ns.ColoredTag() .. " " .. msg, author, ...
     end

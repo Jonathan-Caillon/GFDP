@@ -38,13 +38,13 @@ local function IsPlayer(contextData)
     -- Le GUID d'un joueur commence par "Player-", celui d'un PNJ par
     -- "Creature-", "Vehicle-" ou "Pet-". C'est le controle le plus fiable, et il
     -- ne demande aucune API d'unite.
-    local guid = contextData.guid
-    if type(guid) == "string" and guid ~= "" and not ns.IsSecret(guid) then
+    local guid = ns.SafeString(contextData.guid)
+    if guid then
         return guid:sub(1, 7) == "Player-"
     end
 
-    local unit = contextData.unit
-    if unit and not ns.IsSecret(unit) then
+    local unit = ns.SafeString(contextData.unit)
+    if unit then
         return UnitIsPlayer(unit) and true or false
     end
 
@@ -60,13 +60,8 @@ end
 --
 -- @return name, realm  ou nil si l'identification echoue
 local function ResolvePlayer(contextData)
-    local name = contextData.name
-    local realm = contextData.server
-
-    if ns.IsSecret(name) then name = nil end
-    if ns.IsSecret(realm) then realm = nil end
-    if type(name) ~= "string" or name == "" then name = nil end
-    if type(realm) ~= "string" or realm == "" then realm = nil end
+    local name = ns.SafeString(contextData.name)
+    local realm = ns.SafeString(contextData.server)
 
     -- Repli sur le jeton d'unite si le menu n'a pas donne le nom
     if not name then
@@ -74,10 +69,7 @@ local function ResolvePlayer(contextData)
     end
     if not name then return end
 
-    if not realm or realm == "" then
-        realm = GetNormalizedRealmName()
-    end
-    return name, realm
+    return name, realm or GetNormalizedRealmName()
 end
 
 local function Toggle(name, realm)
@@ -100,8 +92,8 @@ local function AddEntry(rootDescription, contextData, trustTag)
         -- Le type reel du menu prime sur celui de l'enregistrement : un menu
         -- inattendu est ignore.
         local trusted = trustTag
-        local which = contextData.which
-        if which ~= nil then
+        local which = ns.SafeString(contextData.which)
+        if which then
             if MENUS[which] == nil then return end
             trusted = MENUS[which]
         end

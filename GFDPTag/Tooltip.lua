@@ -25,32 +25,23 @@ end
 -- UnitTokenFromGUID en redérive un jeton d'unite utilisable. Technique reprise
 -- de l'addon RaiderIO.
 --
+-- Il n'y a volontairement aucun repli sur le nom affiche dans l'infobulle :
+-- ce texte ne permet ni de verifier qu'il s'agit d'un joueur (le tag ne doit
+-- jamais apparaitre sur un PNJ) ni de connaitre le royaume. Si le GUID est
+-- inexploitable, on n'affiche rien. RaiderIO fait le meme choix.
+--
+-- Le filtrage des PNJ est assure par ns.UnitNameRealm, qui appelle UnitIsPlayer.
+--
 -- @return name, realm  ou nil si l'identification echoue
 local function GetTooltipPlayer(tooltip)
     if not tooltip.GetPrimaryTooltipData then return end
     if tooltip.IsTooltipType and not tooltip:IsTooltipType(Enum.TooltipDataType.Unit) then return end
 
     local data = tooltip:GetPrimaryTooltipData()
-    local guid = data and data.guid
-    if not guid or ns.IsSecret(guid) then return end
+    local guid = ns.SafeString(data and data.guid)
+    if not guid then return end
 
     return ns.UnitNameRealm(UnitTokenFromGUID(guid))
-end
-
--- Repli quand le GUID est indisponible : le nom affiche en premiere ligne est
--- une chaine ordinaire. Sans royaume, la correspondance se fait alors sur le
--- royaume du joueur connecte.
-local function GetDisplayedName(tooltip, data)
-    local line = data and data.lines and data.lines[1]
-    local text = line and line.leftText
-    if not text and GameTooltipTextLeft1 then
-        text = GameTooltipTextLeft1:GetText()
-    end
-    if type(text) ~= "string" or text == "" then return end
-
-    -- Le nom peut arriver colore selon la classe
-    local name = ns.Trim((text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")))
-    return name ~= "" and name or nil
 end
 
 local function AddTagLine(tooltip, name, realm)
@@ -76,13 +67,8 @@ function Tooltip:Init()
     if self.initialized then return end
     self.initialized = true
 
-    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, Guard(function(tooltip, data)
+    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, Guard(function(tooltip)
         if not ns.db or not ns.db.tooltip then return end
-
-        local name, realm = GetTooltipPlayer(tooltip)
-        if not name then
-            name = GetDisplayedName(tooltip, data)
-        end
-        AddTagLine(tooltip, name, realm)
+        AddTagLine(tooltip, GetTooltipPlayer(tooltip))
     end))
 end

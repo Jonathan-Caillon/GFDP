@@ -84,18 +84,12 @@ function Raid:Update()
         -- le teste avant, et on se rabat sur le nom affiche le cas echeant --
         -- sans royaume, donc, la correspondance se faisant alors sur le royaume
         -- du joueur connecte.
+        -- Aucun repli sur le texte affiche : il ne permet pas de verifier qu'il
+        -- s'agit d'un joueur, et les cadres compacts affichent aussi les
+        -- familiers. ns.UnitNameRealm appelle UnitIsPlayer, ce qui les ecarte.
         local show = false
         if ns.db and ns.db.raid and frame:IsShown() then
             local name, realm = ns.UnitNameRealm(frame.unit)
-
-            if not name then
-                local displayed = nameString:GetText()
-                if type(displayed) == "string" and displayed ~= "" then
-                    name = ns.Trim((displayed:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")))
-                    if name == "" then name = nil end
-                end
-            end
-
             show = (name and ns.Roster:IsTagged(name, realm)) and true or false
         end
 
