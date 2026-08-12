@@ -21,16 +21,18 @@ end
 -- "secrete", que UnitExists ou UnitName refusent de traiter en execution
 -- contaminee — donc toujours, dans le code d'un addon.
 --
--- Le GUID expose par GetPrimaryTooltipData(), lui, est exploitable, et
--- UnitTokenFromGUID en redérive un jeton d'unite utilisable. Technique reprise
--- de l'addon RaiderIO.
+-- Le GUID expose par GetPrimaryTooltipData(), lui, est exploitable. Il est
+-- resolu directement par ns.PlayerNameRealmFromGUID, sans passer par un jeton
+-- d'unite : UnitTokenFromGUID renvoie nil des que le joueur ne correspond a
+-- aucun jeton actif, ce qui faisait echouer la resolution sans raison.
 --
 -- Il n'y a volontairement aucun repli sur le nom affiche dans l'infobulle :
 -- ce texte ne permet ni de verifier qu'il s'agit d'un joueur (le tag ne doit
 -- jamais apparaitre sur un PNJ) ni de connaitre le royaume. Si le GUID est
 -- inexploitable, on n'affiche rien. RaiderIO fait le meme choix.
 --
--- Le filtrage des PNJ est assure par ns.UnitNameRealm, qui appelle UnitIsPlayer.
+-- Le filtrage des PNJ est assure par le prefixe "Player-" du GUID, verifie dans
+-- ns.PlayerNameRealmFromGUID.
 --
 -- @return name, realm  ou nil si l'identification echoue
 local function GetTooltipPlayer(tooltip)
@@ -41,7 +43,7 @@ local function GetTooltipPlayer(tooltip)
     local guid = ns.SafeString(data and data.guid)
     if not guid then return end
 
-    return ns.UnitNameRealm(UnitTokenFromGUID(guid))
+    return ns.PlayerNameRealmFromGUID(guid)
 end
 
 local function AddTagLine(tooltip, name, realm)
@@ -66,6 +68,12 @@ end
 function Tooltip:Init()
     if self.initialized then return end
     self.initialized = true
+
+    if not TooltipDataProcessor or not TooltipDataProcessor.AddTooltipPostCall
+        or not Enum or not Enum.TooltipDataType or not Enum.TooltipDataType.Unit then
+        ns.Print("API d'infobulle indisponible : le tag dans les infobulles est desactive.")
+        return
+    end
 
     TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, Guard(function(tooltip)
         if not ns.db or not ns.db.tooltip then return end

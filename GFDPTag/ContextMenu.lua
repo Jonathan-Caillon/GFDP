@@ -45,7 +45,8 @@ local function IsPlayer(contextData)
 
     local unit = ns.SafeString(contextData.unit)
     if unit then
-        return UnitIsPlayer(unit) and true or false
+        local ok, isPlayer = pcall(UnitIsPlayer, unit)
+        if ok then return isPlayer and true or false end
     end
 
     return nil   -- ni GUID ni jeton exploitable
@@ -63,7 +64,12 @@ local function ResolvePlayer(contextData)
     local name = ns.SafeString(contextData.name)
     local realm = ns.SafeString(contextData.server)
 
-    -- Repli sur le jeton d'unite si le menu n'a pas donne le nom
+    -- Premier repli : le GUID, resolu sans passer par un jeton d'unite.
+    if not name then
+        name, realm = ns.PlayerNameRealmFromGUID(contextData.guid)
+    end
+
+    -- Dernier repli, pour les menus qui ne fournissent qu'un jeton d'unite.
     if not name then
         name, realm = ns.UnitNameRealm(contextData.unit)
     end

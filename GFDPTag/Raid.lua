@@ -16,19 +16,28 @@ local INTERVAL = 0.5
 -- Les cadres compacts portent des noms globaux, ce qui permet de les atteindre
 -- sans jamais toucher a CompactRaidFrameContainer, pilote par du code securise.
 local function ForEachCompactFrame(callback)
-    for i = 1, 40 do
+    -- Blizzard cree CompactRaidFrame1, 2, ... de facon contigue, mais le pool ne
+    -- se limite pas a 40 cadres : ceux des main tanks, des cibles et des
+    -- familiers partagent le meme compteur. S'arreter a 40 pouvait donc manquer
+    -- des joueurs en fin de raid. On parcourt tout le pool reellement cree.
+    local i = 1
+    while true do
         local frame = _G["CompactRaidFrame" .. i]
-        if frame then callback(frame) end
+        if not frame then break end
+        callback(frame)
+        i = i + 1
     end
+
     -- Groupe affiche en "style raid"
-    for i = 1, 5 do
-        local frame = _G["CompactPartyFrameMember" .. i]
+    for member = 1, 5 do
+        local frame = _G["CompactPartyFrameMember" .. member]
         if frame then callback(frame) end
     end
+
     -- Disposition "garder les groupes ensemble"
-    for g = 1, 8 do
-        for m = 1, 5 do
-            local frame = _G["CompactRaidGroup" .. g .. "Member" .. m]
+    for group = 1, 8 do
+        for member = 1, 5 do
+            local frame = _G["CompactRaidGroup" .. group .. "Member" .. member]
             if frame then callback(frame) end
         end
     end

@@ -24,7 +24,12 @@ local function Filter(frame, event, msg, author, ...)
 
     local name, realm = ns.SplitName(sender)
     if ns.Roster:IsTagged(name, realm) then
-        return false, ns.ColoredTag() .. " " .. msg, author, ...
+        -- Le texte du message peut lui aussi etre une valeur secrete : le
+        -- concatener sans l'avoir valide leverait une erreur.
+        local safeMessage = ns.SafeString(msg)
+        if not safeMessage then return false end
+
+        return false, ns.ColoredTag() .. " " .. safeMessage, author, ...
     end
     return false
 end

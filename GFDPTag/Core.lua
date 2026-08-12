@@ -2,7 +2,7 @@
 local ADDON_NAME, ns = ...
 
 ns.ADDON_NAME = ADDON_NAME
-ns.VERSION = "1.0.0"
+ns.VERSION = "1.1.0"
 
 -- Valeurs par defaut de la base sauvegardee (SavedVariables : GFDPTagDB)
 local DEFAULTS = {
@@ -85,17 +85,49 @@ function ns.SafeString(value)
 end
 
 --- Nom et royaume d'un joueur a partir d'un jeton d'unite.
+--
+-- Les appels sont enveloppes dans pcall : plusieurs API d'unite refusent les
+-- arguments contaminés, et un echec doit rendre ce helper silencieux plutot que
+-- de declencher le coupe-circuit d'une fonctionnalite entiere.
+--
 -- @return name, realm  ou nil si l'unite est inutilisable
 function ns.UnitNameRealm(unit)
     unit = ns.SafeString(unit)
     if not unit then return end
-    if not UnitIsPlayer(unit) then return end
 
-    local name, realm = UnitNameUnmodified(unit)
+    local okPlayer, isPlayer = pcall(UnitIsPlayer, unit)
+    if not okPlayer or not isPlayer then return end
+
+    local okName, name, realm = pcall(UnitNameUnmodified, unit)
+    if not okName then return end
+
     name = ns.SafeString(name)
     if not name then return end
 
     -- Un royaume secret, absent ou vide signifie "le meme que le joueur connecte"
+    realm = ns.SafeString(realm) or GetNormalizedRealmName()
+    return name, realm
+end
+
+--- Nom et royaume d'un joueur directement depuis son GUID.
+--
+-- Voie privilegiee partout ou un GUID est disponible : elle evite le detour
+-- GUID -> jeton d'unite -> UnitNameUnmodified. UnitTokenFromGUID renvoie nil des
+-- que le joueur ne correspond a aucun jeton actif, ce qui faisait echouer la
+-- resolution sans raison. Le prefixe "Player-" ecarte les PNJ avant tout appel.
+--
+-- @return name, realm  ou nil si le GUID est inexploitable
+function ns.PlayerNameRealmFromGUID(guid)
+    guid = ns.SafeString(guid)
+    if not guid or guid:sub(1, 7) ~= "Player-" then return end
+    if not UnitNameFromGUID then return end
+
+    local ok, name, realm = pcall(UnitNameFromGUID, guid)
+    if not ok then return end
+
+    name = ns.SafeString(name)
+    if not name then return end
+
     realm = ns.SafeString(realm) or GetNormalizedRealmName()
     return name, realm
 end

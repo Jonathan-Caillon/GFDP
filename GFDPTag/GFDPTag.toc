@@ -3,7 +3,7 @@
 ## Notes: Marque les joueurs avec le tag GFDP.
 ## Notes-frFR: Marque les joueurs avec le tag GFDP.
 ## Author: GFDP
-## Version: 1.0.0
+## Version: 1.1.0
 ## SavedVariables: GFDPTagDB
 ## IconTexture: Interface\AddOns\GFDPTag\Icone
 ## X-Category: Guild
