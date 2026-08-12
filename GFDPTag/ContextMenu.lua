@@ -5,8 +5,9 @@ local ContextMenu = {}
 ns.ContextMenu = ContextMenu
 
 -- Coupe-circuit, comme ailleurs dans l'addon : une erreur previent une fois
--- puis retire l'entree, au lieu de se repeter a chaque clic droit.
-local disabled = false
+-- puis retire l'entree, au lieu de se repeter a chaque clic droit. Le drapeau
+-- vit sur le module pour pouvoir etre rearme sans /reload.
+ContextMenu.disabled = false
 
 -- Menus ou l'entree est proposee, et si le type garantit qu'il s'agit d'un
 -- joueur. Les deux menus a false s'ouvrent aussi sur un PNJ : il faut alors le
@@ -79,18 +80,22 @@ local function ResolvePlayer(contextData)
 end
 
 local function Toggle(name, realm)
+    -- realm peut etre nil si GetNormalizedRealmName n'a rien rendu : le passer
+    -- tel quel a string.format leverait "bad argument (string expected, got nil)".
+    local label = (realm and realm ~= "") and (name .. "-" .. realm) or name
+
     if ns.Roster:IsTagged(name, realm) then
         ns.Roster:Remove(name, realm)
-        ns.Print("%s-%s retire de la liste (total : %d).", name, realm, ns.Roster:Count())
+        ns.Print("%s retire de la liste (total : %d).", label, ns.Roster:Count())
     else
         ns.Roster:Add(name, realm)
-        ns.Print("|cff33ff99%s-%s|r ajoute a la liste (total : %d).", name, realm, ns.Roster:Count())
+        ns.Print("|cff33ff99%s|r ajoute a la liste (total : %d).", label, ns.Roster:Count())
     end
 end
 
 --- @param trustTag true si le menu d'enregistrement ne concerne que des joueurs
 local function AddEntry(rootDescription, contextData, trustTag)
-    if disabled then return end
+    if ContextMenu.disabled then return end
 
     local ok, err = pcall(function()
         if not contextData then return end
@@ -118,12 +123,19 @@ local function AddEntry(rootDescription, contextData, trustTag)
 
         rootDescription:CreateDivider()
         rootDescription:CreateButton(label, function()
-            Toggle(name, realm)
+            -- Le pcall ci-dessus ne couvre que la construction du menu : ce
+            -- callback s'execute au clic, bien plus tard. Sans cette protection,
+            -- une erreur ici remonterait brute au joueur.
+            local okClick, errClick = pcall(Toggle, name, realm)
+            if not okClick then
+                ContextMenu.disabled = true
+                ns.Print("|cffff5555Entree de menu desactivee|r apres une erreur : %s", tostring(errClick))
+            end
         end)
     end)
 
     if not ok then
-        disabled = true
+        ContextMenu.disabled = true
         ns.Print("|cffff5555Entree de menu desactivee|r apres une erreur : %s", tostring(err))
     end
 end
@@ -132,31 +144,30 @@ function ContextMenu:Init()
     if self.initialized then return end
     self.initialized = true
 
-    local manager = Menu and Menu.GetManager and Menu.GetManager()
-    if not Menu or not Menu.ModifyMenu or not manager then
+    if not Menu or not Menu.ModifyMenu then
         ns.Print("API Menu indisponible : l'entree de menu contextuel est desactivee.")
         return
     end
 
-    local registered = false
-    local function Register()
-        if registered then return end
-        registered = true
-        for name, trustTag in pairs(MENUS) do
-            Menu.ModifyMenu("MENU_UNIT_" .. name, function(_, rootDescription, contextData)
-                AddEntry(rootDescription, contextData, trustTag)
-            end)
-        end
-    end
-
-    -- L'enregistrement est volontairement retarde jusqu'a ce que Blizzard ait
-    -- ouvert un menu lui-meme.
+    -- Enregistrement direct a l'initialisation.
     --
-    -- Appeler ModifyMenu des la connexion se fait avant que le code securise
-    -- ait initialise son etat interne, ce qui contamine tout le systeme de
-    -- menus. Contrepartie assumee, et documentee par RaiderIO d'ou vient
-    -- l'approche : le tout premier menu de la session n'aura pas l'entree, il
-    -- faut le rouvrir une fois.
-    hooksecurefunc(manager, "OpenMenu", Register)
-    hooksecurefunc(manager, "OpenContextMenu", Register)
+    -- Le systeme de menus actuel regenere les modifications avant chaque
+    -- affichage, l'enregistrement n'a donc pas besoin d'attendre. Une version
+    -- precedente le retardait jusqu'au premier menu ouvert par Blizzard, ce qui
+    -- privait le tout premier clic droit de la session de l'entree.
+    --
+    -- A surveiller : RaiderIO retarde volontairement cet appel, au motif qu'un
+    -- ModifyMenu trop precoce contamine le systeme de menus. Si des erreurs de
+    -- contamination apparaissent au clic droit, c'est la premiere piste.
+    self.menuHandles = self.menuHandles or {}
+
+    for name, trustTag in pairs(MENUS) do
+        -- Copies locales : les callbacks ne doivent pas dependre de la variable
+        -- de boucle, reutilisee a chaque tour.
+        local menuName, menuTrust = name, trustTag
+        local handle = Menu.ModifyMenu("MENU_UNIT_" .. menuName, function(_, rootDescription, contextData)
+            AddEntry(rootDescription, contextData, menuTrust)
+        end)
+        self.menuHandles[#self.menuHandles + 1] = handle
+    end
 end

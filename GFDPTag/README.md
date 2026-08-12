@@ -67,7 +67,9 @@ Le royaume est repris automatiquement, donc un joueur d'un autre royaume est enr
 
 L'entrée **n'apparaît jamais sur un PNJ**. Le menu de la cible et celui du focus s'ouvrent aussi bien sur une créature, un familier ou un véhicule ; l'addon vérifie le préfixe du GUID (`Player-`) avant de proposer quoi que ce soit, et s'abstient s'il ne peut pas conclure.
 
-**Le tout premier menu ouvert dans une session n'aura pas l'entrée** — il faut le rouvrir une fois. C'est délibéré : appeler `Menu.ModifyMenu` dès la connexion se fait avant que le code sécurisé du jeu ait initialisé son état interne, ce qui contamine tout le système de menus. L'addon attend donc que Blizzard ouvre un menu avant de s'enregistrer. Approche reprise de [RaiderIO](https://github.com/RaiderIO/raiderio-addon).
+L'entrée est disponible **dès le premier clic droit** : `Menu.ModifyMenu` est appelé à l'initialisation, le système de menus régénérant les modifications avant chaque affichage.
+
+À noter pour le débogage : [RaiderIO](https://github.com/RaiderIO/raiderio-addon) retarde volontairement cet appel jusqu'au premier menu ouvert par Blizzard, au motif qu'un enregistrement trop précoce contamine le système de menus. Si des erreurs de contamination apparaissent au clic droit, c'est la première piste à examiner.
 
 ## Commandes
 
