@@ -63,8 +63,31 @@ local function CreateFrame_Import()
     edit:SetMaxLetters(0)
     edit:SetScript("OnEscapePressed", function() f:Hide() end)
     edit:SetScript("OnTextChanged", function(self)
-        local lines = select(2, self:GetText():gsub("\n", "")) + 1
-        f.status:SetText(("%d ligne(s) collee(s)"):format(self:GetText() == "" and 0 or lines))
+        -- Sans ce relais, la zone de saisie ne suit pas le curseur et la barre
+        -- de defilement ignore la hauteur reelle du contenu : un CSV de plusieurs
+        -- centaines de lignes devient illisible au-dela de la zone visible.
+        if ScrollingEdit_OnTextChanged then
+            ScrollingEdit_OnTextChanged(self, scroll)
+        end
+
+        -- Une seule lecture du contenu : sur un gros CSV, deux extractions plus
+        -- un gsub integral a chaque frappe se sentaient a la saisie.
+        local text = self:GetText()
+        local count = 0
+        if text ~= "" then
+            count = select(2, text:gsub("\n", "")) + 1
+        end
+        f.status:SetText(("%d ligne(s) collee(s)"):format(count))
+    end)
+    edit:SetScript("OnCursorChanged", function(self, x, y, w, h)
+        if ScrollingEdit_OnCursorChanged then
+            ScrollingEdit_OnCursorChanged(self, x, y, w, h)
+        end
+    end)
+    edit:SetScript("OnUpdate", function(self, delta)
+        if ScrollingEdit_OnUpdate then
+            ScrollingEdit_OnUpdate(self, delta, scroll)
+        end
     end)
     scroll:SetScrollChild(edit)
     f.edit = edit

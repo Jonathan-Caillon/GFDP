@@ -12,9 +12,15 @@ ns.Roster = Roster
 -- l'ensemble du fichier (une seule ligne ne suffit pas : un fichier peut
 -- commencer par une colonne unique et utiliser un separateur plus bas).
 local function DetectDelimiter(text)
+    -- Les champs cites sont retires avant le comptage : un fichier separe par
+    -- des points-virgules dont plusieurs champs contiennent des virgules
+    -- ("Dupont, Jean";Hyjal) ferait autrement gagner la virgule, et tout le
+    -- fichier serait decoupe sur le mauvais separateur.
+    local sample = text:gsub('"[^"]*"', "")
+
     local best, bestCount = ",", 0
     for _, sep in ipairs({ ",", ";", "\t", "|" }) do
-        local _, count = text:gsub("%" .. sep, "")
+        local _, count = sample:gsub("%" .. sep, "")
         if count > bestCount then
             best, bestCount = sep, count
         end
@@ -152,14 +158,27 @@ local function FullKey(name, realm)
     return ns.NormalizeName(name) .. "-" .. ns.NormalizeRealm(realm)
 end
 
+--- Separe "Nom-Royaume" en tenant compte d'un royaume fourni a part.
+--
+-- Le royaume inline l'emporte sur celui passe en argument : il est explicite,
+-- alors que l'argument n'est souvent qu'un defaut de contexte. L'inverse
+-- enregistrait "Thrall-Dalaran" sous le royaume courant quand un menu
+-- fournissait le nom complet sans champ server separe.
+local function SplitWithRealm(name, realm)
+    local inlineName, inlineRealm = ns.SplitName(name)
+    inlineRealm = ns.Trim(inlineRealm or "")
+    if inlineRealm ~= "" then
+        return inlineName, inlineRealm
+    end
+    return inlineName, ns.Trim(realm or "")
+end
+
 --- Ajoute un joueur. Si realm est nil, le joueur est tagge sur tous les royaumes.
 function Roster:Add(name, realm)
     name = ns.Trim(name)
     if name == "" then return false end
 
-    local inlineName, inlineRealm = ns.SplitName(name)
-    name = inlineName
-    realm = ns.Trim(realm or inlineRealm or "")
+    name, realm = SplitWithRealm(name, realm)
 
     if realm ~= "" then
         local key = FullKey(name, realm)
@@ -178,30 +197,40 @@ function Roster:Remove(name, realm)
     name = ns.Trim(name)
     if name == "" then return false end
 
-    local inlineName, inlineRealm = ns.SplitName(name)
-    name = inlineName
-    realm = ns.Trim(realm or inlineRealm or "")
+    name, realm = SplitWithRealm(name, realm)
 
+    local nameKey = ns.NormalizeName(name)
     local removed = false
+
     if realm ~= "" then
+        -- Royaume precis : on ne retire que cette entree. Supprimer aussi
+        -- l'entree "tous royaumes" ferait perdre le tag sur tous les autres
+        -- royaumes alors qu'un seul etait vise.
         local key = FullKey(name, realm)
         if ns.db.entriesByFull[key] then
             ns.db.entriesByFull[key] = nil
-            removed = true
+            return true
         end
+
+        -- Aucune entree pour ce royaume : le joueur n'etait tague que par
+        -- l'entree globale. La retirer est le seul moyen d'honorer la demande,
+        -- et c'est ce qui fait fonctionner la bascule du menu contextuel.
+        if ns.db.entriesByName[nameKey] then
+            ns.db.entriesByName[nameKey] = nil
+            return true
+        end
+        return false
     end
-    -- Retire aussi l'entree "tous royaumes" et toutes les variantes du nom
-    local nameKey = ns.NormalizeName(name)
+
+    -- Sans royaume : on retire l'entree globale et toutes les variantes du nom
     if ns.db.entriesByName[nameKey] then
         ns.db.entriesByName[nameKey] = nil
         removed = true
     end
-    if realm == "" then
-        for key, data in pairs(ns.db.entriesByFull) do
-            if ns.NormalizeName(data.name) == nameKey then
-                ns.db.entriesByFull[key] = nil
-                removed = true
-            end
+    for key, data in pairs(ns.db.entriesByFull) do
+        if ns.NormalizeName(data.name) == nameKey then
+            ns.db.entriesByFull[key] = nil
+            removed = true
         end
     end
     return removed
@@ -213,9 +242,7 @@ end
 function Roster:IsTagged(name, realm)
     if not name or name == "" then return false end
 
-    local inlineName, inlineRealm = ns.SplitName(name)
-    name = inlineName
-    realm = ns.Trim(realm or inlineRealm or "")
+    name, realm = SplitWithRealm(name, realm)
     if realm == "" then
         realm = ns.PlayerRealm()
     end

@@ -9,6 +9,16 @@ ns.Raid = Raid
 -- seul entre deux passages : un intervalle large suffit donc.
 local INTERVAL = 0.5
 
+-- Borne de securite du parcours des cadres compacts. Large devant le pool reel
+-- (40 joueurs plus les cadres de tank, de cible et de familier), assez basse
+-- pour qu'un pool anormal ne fasse pas boucler le sondage.
+local MAX_COMPACT_FRAMES = 200
+
+-- Coupe-circuit : le sondage tourne en continu, une erreur non capturee serait
+-- repetee deux fois par seconde. Expose sur le module pour que /gfdp raid on
+-- puisse le rearmer sans /reload.
+Raid.disabled = false
+
 --------------------------------------------------------------------------------
 -- Parcours des cadres
 --------------------------------------------------------------------------------
@@ -19,13 +29,14 @@ local function ForEachCompactFrame(callback)
     -- Blizzard cree CompactRaidFrame1, 2, ... de facon contigue, mais le pool ne
     -- se limite pas a 40 cadres : ceux des main tanks, des cibles et des
     -- familiers partagent le meme compteur. S'arreter a 40 pouvait donc manquer
-    -- des joueurs en fin de raid. On parcourt tout le pool reellement cree.
-    local i = 1
-    while true do
+    -- des joueurs en fin de raid. On parcourt tout le pool reellement cree,
+    -- avec une borne de securite : la sortie ne doit pas dependre uniquement de
+    -- l'absence de la globale suivante, cette boucle tournant deux fois par
+    -- seconde a l'interieur d'un pcall qui masquerait tout emballement.
+    for i = 1, MAX_COMPACT_FRAMES do
         local frame = _G["CompactRaidFrame" .. i]
         if not frame then break end
         callback(frame)
-        i = i + 1
     end
 
     -- Groupe affiche en "style raid"
@@ -83,36 +94,35 @@ end
 
 --------------------------------------------------------------------------------
 
+-- Hissee hors de Raid:Update : une closure identique y etait reallouee deux
+-- fois par seconde pendant toute la duree d'un groupe.
+local function UpdateFrame(frame)
+    local nameString = frame.name
+    if not nameString then return end
+
+    -- Aucun repli sur le texte affiche : il ne permet pas de verifier qu'il
+    -- s'agit d'un joueur, et les cadres compacts affichent aussi les familiers.
+    -- ns.UnitNameRealm appelle UnitIsPlayer, ce qui les ecarte.
+    local show = false
+    if ns.db and ns.db.raid and frame:IsShown() then
+        local name, realm = ns.UnitNameRealm(frame.unit)
+        show = (name and ns.Roster:IsTagged(name, realm)) and true or false
+    end
+
+    -- Rien a afficher : on evite de creer un FontString inutile
+    if not show then
+        if frame.GFDPTagText then frame.GFDPTagText:SetText("") end
+        return
+    end
+
+    local tagString = EnsureTagString(frame)
+    tagString:SetText(ns.ColoredTag())
+    -- Recalcule a chaque passage : la largeur change avec le nom affiche
+    PositionTag(nameString, tagString)
+end
+
 function Raid:Update()
-    ForEachCompactFrame(function(frame)
-        local nameString = frame.name
-        if not nameString then return end
-
-        -- frame.unit peut etre une valeur "secrete" : le passer a UnitIsPlayer ou
-        -- UnitName provoquerait une erreur en execution contaminee. ns.IsSecret
-        -- le teste avant, et on se rabat sur le nom affiche le cas echeant --
-        -- sans royaume, donc, la correspondance se faisant alors sur le royaume
-        -- du joueur connecte.
-        -- Aucun repli sur le texte affiche : il ne permet pas de verifier qu'il
-        -- s'agit d'un joueur, et les cadres compacts affichent aussi les
-        -- familiers. ns.UnitNameRealm appelle UnitIsPlayer, ce qui les ecarte.
-        local show = false
-        if ns.db and ns.db.raid and frame:IsShown() then
-            local name, realm = ns.UnitNameRealm(frame.unit)
-            show = (name and ns.Roster:IsTagged(name, realm)) and true or false
-        end
-
-        -- Rien a afficher : on evite de creer un FontString inutile
-        if not show then
-            if frame.GFDPTagText then frame.GFDPTagText:SetText("") end
-            return
-        end
-
-        local tagString = EnsureTagString(frame)
-        tagString:SetText(ns.ColoredTag())
-        -- Recalcule a chaque passage : la largeur change avec le nom affiche
-        PositionTag(nameString, tagString)
-    end)
+    ForEachCompactFrame(UpdateFrame)
 end
 
 function Raid:Init()
@@ -129,14 +139,10 @@ function Raid:Init()
     --
     -- Ici tout se fait depuis notre propre contexte : on ne compare aucune
     -- valeur secrete et on n'appelle aucune fonction protegee.
-    -- Coupe-circuit : le sondage tourne en continu, une erreur non capturee
-    -- serait repetee deux fois par seconde. On previent une fois et on s'arrete.
-    local disabled = false
-
     local elapsed = 0
     local driver = CreateFrame("Frame")
     driver:SetScript("OnUpdate", function(_, delta)
-        if disabled then return end
+        if Raid.disabled then return end
 
         elapsed = elapsed + delta
         if elapsed < INTERVAL then return end
@@ -147,7 +153,7 @@ function Raid:Init()
 
         local ok, err = pcall(Raid.Update, Raid)
         if not ok then
-            disabled = true
+            Raid.disabled = true
             ns.Print("|cffff5555Tag sur les cadres de raid desactive|r apres une erreur : %s", tostring(err))
         end
     end)

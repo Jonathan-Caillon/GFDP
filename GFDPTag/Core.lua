@@ -155,18 +155,31 @@ local function ApplyDefaults(db, defaults)
     return db
 end
 
+-- Initialise un module sans laisser son echec interrompre les suivants.
+-- Une API disparue d'une version a l'autre ne doit pas emporter tout l'addon.
+local function SafeInit(label, module)
+    if not module or not module.Init then return end
+    local ok, err = pcall(module.Init, module)
+    if not ok then
+        ns.Print("|cffff5555%s non initialise|r : %s", label, tostring(err))
+    end
+end
+
 local frame = CreateFrame("Frame")
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_LOGIN")
-frame:SetScript("OnEvent", function(_, event, arg1)
+frame:SetScript("OnEvent", function(self, event, arg1)
     if event == "ADDON_LOADED" and arg1 == ADDON_NAME then
         GFDPTagDB = ApplyDefaults(GFDPTagDB or {}, DEFAULTS)
         ns.db = GFDPTagDB
+        -- Plus rien a attendre de cet evenement : inutile d'etre rappele pour
+        -- chaque autre addon charge ensuite.
+        self:UnregisterEvent("ADDON_LOADED")
     elseif event == "PLAYER_LOGIN" then
-        ns.Tooltip:Init()
-        ns.Chat:Init()
-        ns.Raid:Init()
-        ns.ContextMenu:Init()
+        SafeInit("Infobulles", ns.Tooltip)
+        SafeInit("Chat", ns.Chat)
+        SafeInit("Cadres de raid", ns.Raid)
+        SafeInit("Menu contextuel", ns.ContextMenu)
         ns.Print("v%s charge. %d joueur(s) dans la liste. Tape |cffffff00/gfdp|r pour importer un CSV.",
             ns.VERSION, ns.Roster:Count())
     end

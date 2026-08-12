@@ -24,6 +24,15 @@ local function ShowHelp()
     end
 end
 
+-- Rearme le coupe-circuit d'un module quand le joueur le reactive.
+-- Sans cela, /gfdp <module> on annoncait une reactivation sans effet : le
+-- drapeau restait leve jusqu'au prochain /reload.
+local function Rearm(module)
+    if module and module.disabled then
+        module.disabled = false
+    end
+end
+
 local function ParseToggle(value)
     value = (value or ""):lower()
     if value == "on" or value == "1" or value == "oui" then return true end
@@ -93,6 +102,7 @@ SlashCmdList["GFDPTAG"] = function(input)
             ns.Print("Infobulle : %s. Usage : /gfdp tooltip on|off", ns.db.tooltip and "activee" or "desactivee")
         else
             ns.db.tooltip = value
+            if value then Rearm(ns.Tooltip) end
             ns.Print("Infobulle %s.", value and "activee" or "desactivee")
         end
 
@@ -111,7 +121,10 @@ SlashCmdList["GFDPTAG"] = function(input)
             ns.Print("Cadres de raid : %s. Usage : /gfdp raid on|off", ns.db.raid and "active" or "desactive")
         else
             ns.db.raid = value
-            ns.Raid:Update()   -- retire les tags deja poses si on desactive
+            if value then Rearm(ns.Raid) end
+            -- Retire les tags deja poses si on desactive ; protege car appelee
+            -- hors du sondage, qui est seul a disposer de son propre pcall.
+            pcall(ns.Raid.Update, ns.Raid)
             ns.Print("Tag sur les cadres de raid %s.", value and "active" or "desactive")
         end
 

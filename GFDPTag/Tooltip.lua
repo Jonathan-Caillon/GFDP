@@ -4,9 +4,10 @@ local ADDON_NAME, ns = ...
 local Tooltip = {}
 ns.Tooltip = Tooltip
 
--- Coupe-circuit : une erreur desactive la fonctionnalite pour la session au
--- lieu de se repeter a chaque infobulle affichee.
-local disabled = false
+-- Coupe-circuit : une erreur desactive la fonctionnalite au lieu de se repeter
+-- a chaque infobulle. Le drapeau vit sur le module pour que /gfdp tooltip on
+-- puisse le rearmer : sinon la commande annoncerait une reactivation sans effet.
+Tooltip.disabled = false
 
 local function TagColor()
     local color = (ns.db and ns.db.color) or "33ff99"
@@ -56,10 +57,10 @@ end
 -- Enveloppe un handler : en cas d'erreur, on previent une fois et on s'arrete.
 local function Guard(fn)
     return function(...)
-        if disabled then return end
+        if Tooltip.disabled then return end
         local ok, err = pcall(fn, ...)
         if not ok then
-            disabled = true
+            Tooltip.disabled = true
             ns.Print("|cffff5555Tag dans les infobulles desactive|r apres une erreur : %s", tostring(err))
         end
     end
@@ -77,6 +78,12 @@ function Tooltip:Init()
 
     TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit, Guard(function(tooltip)
         if not ns.db or not ns.db.tooltip then return end
+
+        -- Le post-call se declenche pour toute infobulle de type Unit, y compris
+        -- celles d'autres addons et les infobulles de comparaison. On se limite
+        -- aux deux infobulles de jeu.
+        if tooltip ~= GameTooltip and tooltip ~= GameTooltipTooltip then return end
+
         AddTagLine(tooltip, GetTooltipPlayer(tooltip))
     end))
 end

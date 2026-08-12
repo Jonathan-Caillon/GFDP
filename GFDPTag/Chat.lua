@@ -11,6 +11,9 @@ local EVENTS = {
     "CHAT_MSG_RAID", "CHAT_MSG_RAID_LEADER", "CHAT_MSG_RAID_WARNING",
     "CHAT_MSG_INSTANCE_CHAT", "CHAT_MSG_INSTANCE_CHAT_LEADER",
     "CHAT_MSG_WHISPER", "CHAT_MSG_CHANNEL",
+    -- Canal des communautes : canal social courant des guildes actuelles, un
+    -- membre y ecrivant n'etait pas tague alors qu'il l'etait dans /guilde.
+    "CHAT_MSG_COMMUNITIES_CHANNEL",
 }
 
 -- Le tag est insere en tete du message plutot que dans le nom de l'auteur :
